@@ -26,7 +26,9 @@ const {
     reVerifyUser,
     getReportsPerUser,
     animalHasBeenCaptured,
+    updateLimitation,
 } = require('../controllers/userController');
+const { update } = require('../models/userModel');
 
 // http://localhost:5000/api/users/
 
@@ -60,13 +62,15 @@ router.route('/updateProfilePicture/:id').put(updateProfilePicture)
 
 router.route('/updatePassword/:id').put(updatePassword)
 
+router.route('/updateLimitation/:id').put(updateLimitation)
+
 router.route('/submitFeedback').post(submitFeedback)
 
 router.route('/report').post(authenticate, submitReport)
 
 router.route('/getReportsPerUser').get(authenticate, getReportsPerUser)
 
-router.route('/animalHasBeenCaptured').put(animalHasBeenCaptured)
+router.route('/animalHasBeenCaptured/:id').put(authenticate, animalHasBeenCaptured)
 
 // Routes for adoptions
 router.route('/submitAdoption').post(authenticate, submitAdoption)

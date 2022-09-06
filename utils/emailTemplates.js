@@ -460,7 +460,7 @@ const feedbackHasBeenReadTemplate = (profilePicture, message) => {
 
                 .subContainer {
                     display: flex;
-                    margin: 0px 30px 40px 30px;
+                    margin: 0px 30px;
                     align-items: center;
                 }
 
@@ -473,18 +473,18 @@ const feedbackHasBeenReadTemplate = (profilePicture, message) => {
                 }
 
                 .feedback-header {
-                    font-size: 1.7rem;
+                    font-size: 1.8rem;
                     color: white;
                     font-weight: 500;
-                    line-height: 38px;
+                    /* line-height: 38px; */
                 }
 
                 .feedback-subHeader {
-                    font-size: 1rem;
-                    font-weight: 200;
+                    font-size: 1.15rem;
+                    font-weight: 100;
                     color: white;
                     margin-top: -20px;
-                    line-height: 30px;
+                    /* line-height: 27px; */
                 }
 
                 .feedback-container {
@@ -493,30 +493,12 @@ const feedbackHasBeenReadTemplate = (profilePicture, message) => {
                     background-color: rgb(39, 39, 39);
                     position: relative;
                 }
-
+        
                 .feedbackImg {
-                    height: 45px;
-                    width: 45px;
-                    border-radius: 100%;
+                    height: 200px;
+                    width: 200px;
                     -webkit-user-drag: none;
-                    position: absolute;
-                    border: 3px solid rgb(26, 26, 26);
-                    top: -15px;
-                    left: 55px
-                }
-
-                .feedback-txt {
-                    color: white;
-                    font-size: .7rem;
-                    font-weight: 100;
-                    height: 120px;
-                    margin-top: 40px;
-                    margin: 42px 10px 0 10px;
-                    overflow: hidden;
-                    /* white-space: nowrap; */
-                    text-overflow: ellipsis;
-                    -webkit-line-clamp: 4;
-                    display: -webkit-box;
+                    margin: 0 0 0 50px;
                 }
 
                 /* #e63946 */
@@ -562,10 +544,7 @@ const feedbackHasBeenReadTemplate = (profilePicture, message) => {
                         <p class="feedback-subHeader">Thank you for insights to help<br/> improve the app. </p>
                     </div>
 
-                    <div class="feedback-container">
-                        <img src="${profilePicture}" alt="" class="feedbackImg">
-                        <p class="feedback-txt">${message}</p>
-                    </div>
+                    <img src="https://res.cloudinary.com/drvd7jh0b/image/upload/v1662458032/ilaylxxqwdirswdkrh6h.png" alt="..." class="feedbackImg">
                 </div>
 
                 <div class="container-footer">
@@ -573,7 +552,6 @@ const feedbackHasBeenReadTemplate = (profilePicture, message) => {
                 </div>
             </div>
         </body>
-
     `
 }
 

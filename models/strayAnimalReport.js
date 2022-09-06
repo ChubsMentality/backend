@@ -34,7 +34,12 @@ const strayAnimalSchema = mongoose.Schema(
         animalStatus: {
             type: String,
             default: 'Not Captured',
-        }, 
+        },
+        
+        userToken: {
+            type: String,
+            required: true,
+        },
 
         user: {
             type: mongoose.Schema.Types.ObjectId,

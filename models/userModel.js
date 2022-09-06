@@ -1,5 +1,8 @@
 const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
+const moment = require('moment')
+
+// const date = moment().format('YYYY/MM/DD')
 
 // Schema for the user
 const userSchema = mongoose.Schema(
@@ -69,10 +72,14 @@ const userSchema = mongoose.Schema(
             type: String,
         },
 
+        limit: {
+            type: String,
+            default: '',
+        },
+
         verified: {
             type: Boolean,
             default: false,
-            required: true,
         },
         
         profilePicture: {

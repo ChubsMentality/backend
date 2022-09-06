@@ -8,49 +8,51 @@ const VerificationToken = require('../models/verificationToken')
 const ResetPasswordToken = require('../models/resetPasswordToken');
 const asyncHandler = require('express-async-handler')
 const { generateToken, generateResetPasswordToken } = require('../utils/generateToken')
-const { generateCode, mailTransport, emailTransport, emailTemplate } = require('../utils/verifyUserUtils')
+const { generateCode, emailTemplate } = require('../utils/verifyUserUtils')
 const { generateResetPasswordTemplate, plainEmailTemplate } = require('../utils/resetPasswordUtil')
 const { generateTagNo } = require('../utils/generateTagNo')
 
 
 // Sending Email via Google Auth 0Auth2
 const nodemailer = require('nodemailer');
-const { google } = require('googleapis');
-const OAuth2 = google.auth.OAuth2
-
-const googleCreds = {
-    user: 'furryhope.mail@gmail.com',
-    clientId: '550307509735-o1k2nff0tkelnu7dfhh4tgntfk1r4ohb.apps.googleusercontent.com',
-    clientSecret: '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',
-    refreshToken: '1//04GjTgjIj0cvyCgYIARAAGAQSNwF-L9IrVFKItJxMErKq8ZMK0M3JQTZrHU4P2MosYrPhDKM4NhAjRyaSkNDP4z-u1z71ERB_4Gg'
-}
 
 /*
-    New Credentials
-    ================
-    clientId: 550307509735-scbs52j37jqjh1pf06ekaenum9ut4kaf.apps.googleusercontent.com
-    clientSecret: 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
+    // SENDING EMAILS VIA Oauth2
+    const { google } = require('googleapis');
+    const OAuth2 = google.auth.OAuth2
 
+    const googleCreds = {
+        user: 'furryhope.mail@gmail.com',
+        clientId: '550307509735-o1k2nff0tkelnu7dfhh4tgntfk1r4ohb.apps.googleusercontent.com',
+        clientSecret: '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',
+        refreshToken: '1//04GjTgjIj0cvyCgYIARAAGAQSNwF-L9IrVFKItJxMErKq8ZMK0M3JQTZrHU4P2MosYrPhDKM4NhAjRyaSkNDP4z-u1z71ERB_4Gg'
+    }
 
+    const OAuth2_client = new OAuth2(googleCreds.clientId, googleCreds.clientSecret) // clientId, clientSecret
+    OAuth2_client.setCredentials({ refresh_token: googleCreds.refreshToken }) // Setting the refresh token
+
+    const accessToken = OAuth2_client.getAccessToken()
+
+    const transport = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                type: 'OAuth2',
+                user: googleCreds.user,
+                clientId: googleCreds.clientId,
+                clientSecret: googleCreds.clientSecret,
+                refreshToken: googleCreds.refreshToken,
+                accessToken: accessToken
+            }
+        })
 */
-const OAuth2_client = new OAuth2(googleCreds.clientId, googleCreds.clientSecret) // clientId, clientSecret
-OAuth2_client.setCredentials({ refresh_token: googleCreds.refreshToken }) // Setting the refresh token
 
-const accessToken = OAuth2_client.getAccessToken()
-
-const transport = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            type: 'OAuth2',
-            user: googleCreds.user,
-            clientId: googleCreds.clientId,
-            clientSecret: googleCreds.clientSecret,
-            refreshToken: googleCreds.refreshToken,
-            accessToken: accessToken
-        }
-    })
-// Sending Email via Google Auth 0Auth2 -- END
-
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'furryhope.mail@gmail.com',
+        pass: 'ladhuzplwkrnxgro'
+    }
+})
 
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
@@ -152,14 +154,13 @@ const registerUser = asyncHandler(async (req, res) => {
         html: emailTemplate(code)
     }
 
-    transport.sendMail(mailOptions, (error, result) => {
+    transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
             console.log(error)
         } else {
-            console.log(`Success: ${result}`)
+            console.log(`Success: ${info}`)
         }
-
-        transport.close()
+        // transport.close()
     })
     
     res.json({ 
@@ -206,14 +207,14 @@ const reSendCode = asyncHandler(async (req, res) => {
         html: emailTemplate(code)
     }
 
-    transport.sendMail(mailOptions, (error, result) => {
+    transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
             console.log(error)
         } else {
-            console.log(`Success: ${result}`)
+            console.log(`Success: ${info}`)
         }
 
-        transport.close()
+        // transport.close()
     })
 })
 
@@ -318,14 +319,14 @@ const sendResetPassword = asyncHandler(async (req, res) => {
         html: generateResetPasswordTemplate(`http://localhost:3000/reset-password?token=${generatedToken}&id=${user._id}`)
     }
 
-    transport.sendMail(mailOptions, (error, result) => {
+    transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
             console.log(error)
         } else {
-            console.log(`Success: ${result}`)
+            console.log(`Success: ${info}`)
         }
 
-        transport.close()
+        // transport.close()
     })
 
     res.json({
@@ -370,14 +371,14 @@ const resetPassword = asyncHandler(async (req, res) => {
         )
     }
 
-    transport.sendMail(mailOptions, (error, result) => {
+    transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
             console.log(error)
         } else {
-            console.log(`Success: ${result}`)
+            console.log(`Success: ${info}`)
         }
 
-        transport.close()
+        // transport.close()
     })
 
     res.json({ 
@@ -499,13 +500,14 @@ const submitFeedback = asyncHandler(async (req, res) => {
 });
 
 const submitReport = asyncHandler(async (req, res) => {
-    const { date, location, description, image } = req.body
+    const { date, location, description, image, userToken } = req.body
 
     const report = await StrayAnimalReport.create({
         date,
         location,
         description, 
         image,
+        userToken,
         user: req.user._id
     })
 
@@ -516,6 +518,7 @@ const submitReport = asyncHandler(async (req, res) => {
             location: report.location,
             description: report.description,
             image: report.image,
+            userToken: report.userToken,
         })
     } else {
         res.status(400)
@@ -529,12 +532,12 @@ const submitReport = asyncHandler(async (req, res) => {
 })
 
 const getReportsPerUser = asyncHandler(async (req, res) => {
-    const reports = await StrayAnimalReport.find({ user: req.user_id })
+    const reports = await StrayAnimalReport.find({ user: req.user._id })
     res.json(reports)
 })
 
 const animalHasBeenCaptured = asyncHandler(async (req, res) => {
-    const report = await StrayAnimalReport.find({ user: req.user_id})
+    const report = await StrayAnimalReport.findById(req.params.id)
     const animalStatus = 'Captured'
 
     if(report) {
@@ -668,6 +671,19 @@ const submitDonation = asyncHandler(async (req, res) => {
     }
 })
 
+const updateLimitation = asyncHandler(async (req, res) => {
+    const { limit } = req.body
+    const user = await User.findById(req.params.id)
+
+    if(user) {
+        user.limit = limit
+        await user.save()
+    } else {
+        res.status(404)
+        throw new Error(`Couldn't find user.`)
+    }
+})
+
 module.exports = { 
     registerUser, 
     verifyUser,
@@ -692,4 +708,5 @@ module.exports = {
     reVerifyUser,
     getReportsPerUser,
     animalHasBeenCaptured,
+    updateLimitation,
 };

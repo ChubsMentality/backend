@@ -11,24 +11,25 @@ const generateCode = () => {
     return verCode
 }
 
-const emailTransport = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    auth: {
-        // Palitan mo to ng values sa .env
-        user: "qjasalvador@tip.edu.ph",
-        pass: "tipofthetopoftheworld"
-    }
-})
+// Obsolete
+// const emailTransport = nodemailer.createTransport({
+//     host: 'smtp.gmail.com',
+//     auth: {
+//         // Palitan mo to ng values sa .env
+//         user: "qjasalvador@tip.edu.ph",
+//         pass: "tipofthetopoftheworld"
+//     }
+// })
 
-// Function we're going to use to send the verification code to the user's email
-const mailTransport = () => nodemailer.createTransport({
-    host: "smtp.mailtrap.io",
-    port: 2525,
-    auth: {
-        user: process.env.MAILTRAP_USERNAME,
-        pass: process.env.MAILTRAP_PASSWORD
-    }
-});
+// // Function we're going to use to send the verification code to the user's email
+// const mailTransport = () => nodemailer.createTransport({
+//     host: "smtp.mailtrap.io",
+//     port: 2525,
+//     auth: {
+//         user: process.env.MAILTRAP_USERNAME,
+//         pass: process.env.MAILTRAP_PASSWORD
+//     }
+// });
 
 const emailTemplate = (code) => {
     return `
@@ -141,4 +142,4 @@ const emailTemplate = (code) => {
     `
 }
 
-module.exports = { generateCode, mailTransport, emailTransport, emailTemplate } 
+module.exports = { generateCode, emailTemplate } 
