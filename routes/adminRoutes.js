@@ -53,6 +53,8 @@ const {
     disableAdmin,
     enableAdmin,
     getAdoptionByReference,
+    animalHasBeenCaptured,
+    getPickupMessage,
 } = require('../controllers/adminControllers.js');
 const { adminResetValid } = require('../middlewares/userAuth.js');
 
@@ -81,6 +83,7 @@ router.route('/feedbackRead/:id').put(updateFeedbackRead)
 router.route('/getReports').get(getPendingReports)
 router.route('/dismissedReports').get(getDismissedReports)
 router.route('/getReports/:id').get(getSpecificReport)
+router.route('/animalCaptured/:id').put(animalHasBeenCaptured)
 router.route('/dismissReport/:id').put(dismissReport)
 router.route('/reportBeenRead/:id').put(reportHasBeenRead)
 router.route('/deleteReport/:id').delete(deleteReport)
@@ -140,7 +143,6 @@ router.route('/pendingRegistrations').get(getPendingRegistrations)
 
 router.route('/updateRequirements/:id').put(updateRequirements)
 
-
 router.route('/getRegisteredPets').get(getRegisteredPets)
 
 router.route('/getNotRegisteredPets').get(getNotRegisteredPets)
@@ -152,6 +154,8 @@ router.route('/rejectRegistration/:id').put(rejectRegistration)
 router.route('/deleteRegistration/:id').delete(deleteRegistration)
 
 router.route('/sendRegisteredMessage').post(sendRegisteredMessage)
+
+router.route('/getPickupMsg').post(getPickupMessage)
 
 router.route('/updateApplication/:id').put(updateApplicationStatus)
 

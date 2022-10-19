@@ -41,6 +41,11 @@ const strayAnimalSchema = mongoose.Schema(
             required: true,
         },
 
+        userEmail: {
+            type: String,
+            required: true,
+        }, 
+
         user: {
             type: mongoose.Schema.Types.ObjectId,
             required: true,

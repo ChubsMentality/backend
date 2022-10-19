@@ -25,8 +25,13 @@ const {
     reSendCode,
     reVerifyUser,
     getReportsPerUser,
-    animalHasBeenCaptured,
     updateLimitation,
+    removeRegFromAdoption,
+    cancelAdoption,
+    cancelUpdateAdoption,
+    cancelUpdateAnimal,
+    cancelUpdateUser,
+    getMostRecentAdoption,
 } = require('../controllers/userController');
 const { update } = require('../models/userModel');
 
@@ -70,12 +75,17 @@ router.route('/report').post(authenticate, submitReport)
 
 router.route('/getReportsPerUser').get(authenticate, getReportsPerUser)
 
-router.route('/animalHasBeenCaptured/:id').put(authenticate, animalHasBeenCaptured)
 
 // Routes for adoptions
 router.route('/submitAdoption').post(authenticate, submitAdoption)
-
 router.route('/getSpecificAdoptions').get(authenticate, getSpecificAdoptions)
+router.route('/getMostRecentAdoption').get(authenticate, getMostRecentAdoption)
+
+router.route('/cancelUpdateAdoption/:id').put(cancelUpdateAdoption)
+router.route('/cancelUpdateAnimal/:id').put(cancelUpdateAnimal)
+router.route('/cancelUpdateUser/:id').put(cancelUpdateUser)
+router.route('/cancelAdoption').post(cancelAdoption)
+
 
 // Routes for registering and getting all registration submissions
 router.route('/registerAnimal').post(authenticate, submitAnimalRegistration)
@@ -86,7 +96,10 @@ router.route('/submitDonation').post(authenticate, submitDonation)
 // getting a specific registration from a specific user's submission - using their token
 router.route('/getSpecificRegistrations').get(authenticate, getSpecificRegistrations)
 
+router.route('/removeRegFromAdoption').put(removeRegFromAdoption)
+
 router.route('/updatePreference/:id').put(updatePreference)
+
 
 router.route('/animalRegistration/:id')
 .put()

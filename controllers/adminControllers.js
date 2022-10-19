@@ -7,46 +7,15 @@ const DonationInventory = require('../models/donationInventoryModel.js')
 const StrayAnimalReport = require('../models/strayAnimalReport')
 const RegisterAnimal = require('../models/animalRegistrationModel')
 const Adoption = require('../models/adoptionModel')
+const PickupMsg = require('../models/pickupModel')
 const InterviewSched = require('../models/interviewSchedModel')
 const asyncHandler = require('express-async-handler');
 const { generateToken, generateResetPasswordToken } = require('../utils/generateToken');
-const { sendInterviewSchedTemplate, pickupTemplate, rejectAdoptionTemplate, registerAnimalTemplate, feedbackHasBeenReadTemplate } = require('../utils/emailTemplates');
+const { sendInterviewSchedTemplate, pickupTemplate, rejectAdoptionTemplate, registerAnimalTemplate, feedbackHasBeenReadTemplate, animalCapturedTemplate, petFollowUpTemplate } = require('../utils/emailTemplates');
 const ResetPasswordToken = require('../models/resetPasswordToken');
 const { generateResetPasswordTemplate, plainEmailTemplate } = require('../utils/resetPasswordUtil')
-
-
+const cron = require('node-cron')
 const nodemailer = require('nodemailer');
-
-/*
-    // Sending Email via Google Auth 0Auth2
-    const { google } = require('googleapis');
-    const OAuth2 = google.auth.OAuth2
-
-    const googleCreds = {
-        user: 'furryhope.mail@gmail.com',
-        clientId: '550307509735-o1k2nff0tkelnu7dfhh4tgntfk1r4ohb.apps.googleusercontent.com',
-        clientSecret: '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',
-        refreshToken: '1//04GjTgjIj0cvyCgYIARAAGAQSNwF-L9IrVFKItJxMErKq8ZMK0M3JQTZrHU4P2MosYrPhDKM4NhAjRyaSkNDP4z-u1z71ERB_4Gg'
-    }
-
-    const OAuth2_client = new OAuth2(googleCreds.clientId, googleCreds.clientSecret) // clientId, clientSecret
-    OAuth2_client.setCredentials({ refresh_token: googleCreds.refreshToken }) // Setting the refresh token
-
-    const accessToken = OAuth2_client.getAccessToken()
-
-    const transport = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            type: 'OAuth2',
-            user: googleCreds.user,
-            clientId: googleCreds.clientId,
-            clientSecret: googleCreds.clientSecret,
-            refreshToken: googleCreds.refreshToken,
-            accessToken: accessToken
-        }
-    })
-    // Sending Email via Google Auth 0Auth2 -- END
-*/
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -273,7 +242,7 @@ const dismissReport = asyncHandler(async (req, res) => {
         res.json(dismissedReport) 
     } else {
         res.status(404)
-        throw new Error('Stray animal report was not found')
+        throw new Error('Report could not be found')
     }
 })
 
@@ -284,6 +253,38 @@ const deleteReport = asyncHandler(async (req, res) => {
         await report.remove()
         res.json({ message: 'Successfully removed'})
     }
+})
+
+const animalHasBeenCaptured = asyncHandler(async (req, res) => {
+    const report = await StrayAnimalReport.findById(req.params.id)
+    const { email } = req.body
+
+    if(report) {
+        report.animalStatus = 'Captured'
+        const updated = report.save()
+        res.json(updated)
+        
+        let mailOptions = {
+            from: 'furryhope.mail@gmail.com',
+            to: email,
+            subject: 'Animal Captured - Stray animal report',
+            html: animalCapturedTemplate(req.params.id)
+        }
+    
+        transporter.sendMail(mailOptions, (error, info) => {
+            if(error) {
+                console.log(error)
+            } else {
+                console.log(`Success: ${info}`)
+            }
+    
+            transporter.close()
+        })
+    } else {
+        res.status(404)
+        throw new Error('Report could not be found.')
+    }
+
 })
 
 const getAllRegistrations = asyncHandler(async (req, res) => {
@@ -490,13 +491,35 @@ const rejectRegistration = asyncHandler(async (req, res) => {
 })
 
 const updateApplicationStatus = asyncHandler(async (req, res) => {
-    const { adoptionStatus, applicationStatus } = req.body
+    const { adoptionStatus, applicationStatus, petFollowUp, followUpDate, email } = req.body
 
     const adoption = await Adoption.findById(req.params.id)
 
     if (adoption) {
         adoption.adoptionStatus = adoptionStatus
         adoption.applicationStatus = applicationStatus
+        adoption.petFollowUp = petFollowUp
+
+        var split = followUpDate.split(' ')
+
+        // Scheduled email message - reminding the user of the follow up on the pet.
+        cron.schedule(`0 7 ${split[1]} ${split[0]} *`, () => {
+            let mailOptions = {
+                from: 'furryhope.mail@gmail.com',
+                to: email,
+                subject: 'Marikina Veterinary Office - pet follow up reminder in 3 days',
+                html: petFollowUpTemplate(petFollowUp)
+            }
+
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.log(error)
+                } else {
+                    console.log(`Success: ${info}`)
+                }
+                // transport.close()
+            })
+        })
 
         const updated = await adoption.save()
         res.json(updated)
@@ -594,7 +617,7 @@ const updateHasBeenInterviewed = asyncHandler(async (req, res) => {
 })
 
 const getInterviewSched = asyncHandler(async (req, res) => {
-    const interviewSched = await InterviewSched.find({ applicant: req.params.id })
+    const interviewSched = await InterviewSched.findOne({ applicant: req.params.id })
 
     if(!interviewSched) {
         res.status(404)
@@ -605,12 +628,14 @@ const getInterviewSched = asyncHandler(async (req, res) => {
 })
 
 const submitPickupMessage = asyncHandler(async (req, res) => {
-    const { email, pickupDate, pickupTime, animalName, adopterName } = req.body
+    const { email, pickupDate, pickupTime, animalName, adopterName, adoptionReference } = req.body
 
     if(!email || !pickupDate || !pickupTime || !animalName || !adopterName) {
         res.status(400)
         throw new Error('Please fill out all the fields')
     } else {
+        await PickupMsg.create({ email, pickupDate, pickupTime, animalName, adopterName, adoptionReference })
+
         let mailOptions = {
             from: 'furryhope.mail@gmail.com',
             to: email,
@@ -627,6 +652,15 @@ const submitPickupMessage = asyncHandler(async (req, res) => {
 
             transporter.close()
         })
+    }
+})
+
+const getPickupMessage = asyncHandler(async (req, res) => {
+    const { adoptionReference } = req.body  
+    const pickupMsg = await PickupMsg.findOne({ adoptionReference: adoptionReference })
+
+    if(pickupMsg) {
+        res.json(pickupMsg)
     }
 })
 
@@ -887,4 +921,6 @@ module.exports = {
     getNotRegisteredPets,
     deleteRegistration,
     rejectRegistration,
+    animalHasBeenCaptured,
+    getPickupMessage,
 };

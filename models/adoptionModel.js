@@ -95,6 +95,11 @@ const adoptionSchema = mongoose.Schema(
             type: String,
         },
 
+        petFollowUp: {
+            type: String,
+            default: "",
+        },
+
         user: {
             type: mongoose.Schema.Types.ObjectId,
             required: true,

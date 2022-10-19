@@ -1,20 +1,18 @@
 const User = require('../models/userModel')
 const UserFeedback = require('../models/userFeedbackModel')
+const Animal = require ('../models/animalModel') // The animal model
 const StrayAnimalReport = require('../models/strayAnimalReport')
 const RegisterAnimal = require('../models/animalRegistrationModel')
 const Adoption = require('../models/adoptionModel')
 const Donation = require('../models/donationModel')
 const VerificationToken = require('../models/verificationToken')
 const ResetPasswordToken = require('../models/resetPasswordToken');
+const nodemailer = require('nodemailer');
 const asyncHandler = require('express-async-handler')
 const { generateToken, generateResetPasswordToken } = require('../utils/generateToken')
 const { generateCode, emailTemplate } = require('../utils/verifyUserUtils')
 const { generateResetPasswordTemplate, plainEmailTemplate } = require('../utils/resetPasswordUtil')
 const { generateTagNo } = require('../utils/generateTagNo')
-
-
-// Sending Email via Google Auth 0Auth2
-const nodemailer = require('nodemailer');
 
 /*
     // SENDING EMAILS VIA Oauth2
@@ -500,7 +498,7 @@ const submitFeedback = asyncHandler(async (req, res) => {
 });
 
 const submitReport = asyncHandler(async (req, res) => {
-    const { date, location, description, image, userToken } = req.body
+    const { date, location, description, image, userToken, userEmail } = req.body
 
     const report = await StrayAnimalReport.create({
         date,
@@ -508,6 +506,7 @@ const submitReport = asyncHandler(async (req, res) => {
         description, 
         image,
         userToken,
+        userEmail,
         user: req.user._id
     })
 
@@ -519,6 +518,7 @@ const submitReport = asyncHandler(async (req, res) => {
             description: report.description,
             image: report.image,
             userToken: report.userToken,
+            userEmail: report.userEmail,
         })
     } else {
         res.status(400)
@@ -534,19 +534,6 @@ const submitReport = asyncHandler(async (req, res) => {
 const getReportsPerUser = asyncHandler(async (req, res) => {
     const reports = await StrayAnimalReport.find({ user: req.user._id })
     res.json(reports)
-})
-
-const animalHasBeenCaptured = asyncHandler(async (req, res) => {
-    const report = await StrayAnimalReport.findById(req.params.id)
-    const animalStatus = 'Captured'
-
-    if(report) {
-        report.animalStatus = animalStatus
-        await report.save()
-    } else {
-        res.status(404)
-        throw new Error('Report could not be found')
-    }
 })
 
 const getSpecificRegistrations = asyncHandler(async (req, res) => {
@@ -635,6 +622,82 @@ const getSpecificAdoptions = asyncHandler(async (req, res) => {
     res.json(specificAdoptions)
 })
 
+const getMostRecentAdoption = asyncHandler(async (req, res) => {
+    const specAdoption = await Adoption.find({ user: req.user._id }).sort({ _id: -1 }).limit(1)
+    res.json(specAdoption)
+})
+
+const cancelAdoption = asyncHandler(async (req, res) => {
+    const { adoptionId, animalId, userId } = req.body
+
+    const adoption = await Adoption.findById(adoptionId)
+    const animal = await Animal.findById(animalId)
+    const user = await User.findById(userId)
+    const limit = ''
+
+    if(adoption && animal && user) {
+        // Updating Adoption 
+        adoption.applicationStatus = 'Cancelled'
+        adoption.adoptionStatus = 'Cancelled'
+        await adoption.save()
+
+        // Updating Animal
+        animal.adoptionStatus = 'Not Adopted'
+        await animal.save()
+
+        // Updating User
+        user.limit = limit
+        await user.save()
+    }
+})
+
+const cancelUpdateAdoption = asyncHandler(async (req, res) => {
+    const adoption = await Adoption.findById(req.params.id)
+
+    if(adoption) {
+        // res.json(adoption)
+        adoption.applicationStatus = 'Cancelled'
+        adoption.adoptionStatus = 'Cancelled'
+        const updated = await adoption.save()
+        res.json(updated)
+    }
+})
+
+const cancelUpdateAnimal = asyncHandler(async (req, res) => {
+    const animal = await Animal.findById(req.params.id)
+
+    if(animal) {
+        // res.json(animal)
+        animal.adoptionStatus = 'Pending'
+        const updated = await animal.save()
+        res.json(updated)
+    }
+})
+
+const cancelUpdateUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id)
+    const limit = ''
+
+    if(user) {
+        // res.json(user)
+        user.limit = limit
+        const updated = await user.save()
+        res.json(updated)
+    }
+})
+
+const removeRegFromAdoption = asyncHandler(async (req, res) => {
+    const { adoptionReference } = req.body
+
+    const registration = await RegisterAnimal.findOne({ adoptionReference: adoptionReference })
+
+    if(registration) {
+        // res.json(registration)
+        await registration.remove()
+        res.json({ message: 'Registration Removed' })
+    }
+})
+
 const updatePreference = asyncHandler(async (req, res) => {
     const { animalPreference, breedPreferences, colorPreferences, genderPreference, sizePreference } = req.body
 
@@ -702,11 +765,16 @@ module.exports = {
     deleteAnimalRegistration,
     submitAdoption,
     getSpecificAdoptions,
+    getMostRecentAdoption,
     updatePreference,
     submitDonation,
     reSendCode,
     reVerifyUser,
     getReportsPerUser,
-    animalHasBeenCaptured,
     updateLimitation,
+    removeRegFromAdoption,
+    cancelUpdateAdoption,
+    cancelUpdateAnimal,
+    cancelUpdateUser,
+    cancelAdoption,
 };
