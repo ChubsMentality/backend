@@ -801,7 +801,7 @@ const sendResetPassword = asyncHandler(async (req, res) => {
         from: 'furryhope.mail@gmail.com',
         to: admin.email,
         subject: 'Reset Password Link - FurryHope',
-        html: generateResetPasswordTemplate(`http://localhost:3001/reset-password?token=${generatedToken}&id=${admin._id}`)
+        html: generateResetPasswordTemplate(`https://furryhope-admin-reset-password.vercel.app/reset-password?token=${generatedToken}&id=${admin._id}`)
     }
 
     transporter.sendMail(mailOptions, (error, info) => {
